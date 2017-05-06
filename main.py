@@ -21,9 +21,11 @@ for x in range(0, siz[1]):
     st = ""
     for y in range(siz[0]-1, 0, -1):
         ar = p[y, x]
-        height = ar[2]*10
+        height = ar[2]
         topography[y][x] = height
         #print(str(x) + ", " + str(y) + ", " + str(height))
+
+znormal = 47/500
 
 
 def cross(v_a, v_b):
@@ -44,15 +46,13 @@ def dot(v_a, v_b):
     return x
 
 class Bed:
-    def __init__(self, name, points, thickness, faults_above, faults_below, z_index, colour, znormalisation):
+    def __init__(self, name, points, thickness, faults_above, faults_below, z_index, colour):
         self.points = points
-        self.name = name
-        self.thickness = thickness # Thickness above points. If this is the top surface make negative.
-        self.get_indices()
-        self.znormal = znormalisation
         for i in range(0, len(self.points)):
-            self.points[i][2] = self.points[i][2]*znormalisation # Account for the fact that x and y plane 47mm goes to 500m. Adjust all z
-        #self.indices = []
+            self.points[i][2] = float(self.points[i][2]) * 0.1
+        self.name = name
+        self.thickness = thickness * 0.1# Thickness above points. If this is the top surface make negative.
+        self.get_indices()
         self.dip = 0
         self.strike = 0
         self.bounding_faults_top = faults_above
@@ -75,12 +75,16 @@ class Bed:
     def get_orientation(self):
         #a.b = |a||b|cosx
         #x = acos((a.b)/(|a||b|))
-        self.dip = int(90-round((180/math.pi)*math.acos(dot(self.indices[:3], [0, 0, 1])/magnitude(self.indices[:3]))))
+
+        vec = self.indices[:3]
+
+        if (magnitude(vec) != 0):
+            self.dip = int(round((180/math.pi)*math.acos(dot(vec, [0, 0, 1])/magnitude(vec))))
         self.strike = 0
-        mag = magnitude(self.indices[:3])
-        print(str(self.indices[0]/mag) + ", "+str(self.indices[1]/mag)+", "+str(self.indices[2]/mag))
+        #mag = magnitude(vec[:3])
+        #print(str(vec[0]/mag) + ", "+str(vec[1]/mag)+", "+str(vec[2]/mag))
         # let x = 0, 100. z = 100. Calculate y. Use atan(y/100)
-        if (self.indices[1] == 0):
+        if (vec[1] == 0):
             return 0
         delta_y = ((self.indices[3] - self.indices[2]*100 - self.indices[0]*0)/self.indices[1]) - ((self.indices[3] - self.indices[2]*100 - self.indices[0]*100)/self.indices[1])
         self.strike = int(90+round((180/math.pi)*math.atan(delta_y/100)))
@@ -99,18 +103,18 @@ class Bed:
 beds = []
 faults = []
 
-faults.append(Bed("fault", [[159, 81, 100], [0,207, 500], [95,125,200]], 50, [], [], 9, [0,0,0], 500/47))
+faults.append(Bed("fault", [[159, 81, 100], [0,207, 500], [95,125,200]], -10, [], [], 9, [0,0,0]))
 
-beds.append(Bed("Not sure", [[159, 81, 100], [0,207, 500], [95,125,200]], 50, [], [], 9, [0,0,0], 500/47))
+beds.append(Bed("Not sure", [[159, 81, 100], [0,207, 500], [95,125,200]], -100, [], [], 9, [0,0,0]))
 
-beds.append(Bed("Sandstone W", [[67, 0, 300], [45, 242, 200], [71, 91, 200]], 900, [0],[],1, [1,0,0], 500/47)) # Sandstone
-beds.append(Bed("Shale W", [[67, 0, 300], [45, 242, 200], [71, 91, 200]], -300, [0],[],1, [0, 0, 1], 500/47)) # Shale
+beds.append(Bed("Sandstone W", [[67, 0, 300], [45, 242, 200], [71, 91, 200]], 900, [0],[],1, [1,0,0])) # Sandstone
+beds.append(Bed("Shale W", [[67, 0, 300], [45, 242, 200], [71, 91, 200]], -300, [0],[],1, [0, 0, 1])) # Shale
 
-beds.append(Bed("Sandstone E", [[47, 182, 500], [71, 147, 400], [55, 242, 400]], 900, [],[0],1, [1,0,0], 500/47)) # Sandstone
-beds.append(Bed("Shale E", [[47, 182, 500], [71, 147, 400], [55, 242, 400]], -300, [],[0],1, [0, 0, 1], 500/47)) # Shale bounding faults bottom 0
+beds.append(Bed("Sandstone E", [[47, 182, 500], [71, 147, 400], [55, 242, 400]], 900, [],[0],1, [1,0,0])) # Sandstone
+beds.append(Bed("Shale E", [[47, 182, 500], [71, 147, 400], [55, 242, 400]], -300, [],[0],1, [0, 0, 1])) # Shale bounding faults bottom 0
 
-beds.append(Bed("Unconformity W", [[47, 182, 400], [71, 147, 400], [55, 242, 400]], 700, [0],[],4, [0.44, 0.4,0], 500/47)) # Unconformity
-beds.append(Bed("Unconformity E", [[47, 182, 600], [71, 147, 600], [55, 242, 600]], 700, [],[0],3, [0.44, 0.4,0], 500/47)) # Unconformity
+beds.append(Bed("Unconformity W", [[47, 182, 400], [71, 147, 400], [55, 242, 400]], 700, [0],[],4, [0.44, 0.4,0])) # Unconformity
+beds.append(Bed("Unconformity E", [[47, 182, 600], [71, 147, 600], [55, 242, 600]], 700, [],[0],3, [0.44, 0.4,0])) # Unconformity
 
 
 for i in beds:
@@ -158,7 +162,7 @@ def image_over_z(z, topographyr, filename):
             qwer = beds[qw].colour
             if (qw == -1):
                 qwer = [1, 1, 1]
-            pixels[x, y] = (int(qwer[0]*255*2*z/800), int(qwer[1]*255*2*z/800), int(qwer[2]*255*2*z/800))
+            pixels[x, y] = (int(qwer[0]*255*2*z/80), int(qwer[1]*255*2*z/80), int(qwer[2]*255*2*z/80))
 
     img.save(filename)
 
