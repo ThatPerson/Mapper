@@ -144,5 +144,5 @@ def image_over_y(y, filename):
     img.save(filename)
 
 #image_over_y(241, "example.png")
-image_over_z(450, 1, "example.png")
+image_over_z(200, 0, "example.png")
 print("The point "+str(x)+", "+str(y)+", "+str(z)+" is within unit "+str(get_unit([x, y, z])))
